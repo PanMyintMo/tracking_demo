@@ -14,57 +14,24 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
 import com.example.trackingdemoapp.ui.theme.TrackingDemoAppTheme
-import com.example.trackingdemoapp.viewmodel.LocationViewModel
 import com.google.android.gms.location.LocationServices
-import kotlinx.coroutines.launch
 import java.io.IOException
+import java.text.SimpleDateFormat
 import java.util.*
 
 class MainActivity : ComponentActivity() {
     private val trackedLocations = mutableStateListOf<Location>()
-    private lateinit var locationViewModel: LocationViewModel
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-
-        locationViewModel = ViewModelProvider(this)[LocationViewModel::class.java]
-
-
-        lifecycleScope.launch {
-            locationViewModel.locationFlow.collect { locations ->
-                trackedLocations.clear()
-                trackedLocations.addAll(locations)
-            }
-        }
-   ActivityCompat.requestPermissions(
-            this, arrayOf(
-                Manifest.permission.ACCESS_COARSE_LOCATION,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ), 0
-        )
-        val fusedLocationClient =
-            LocationServices.getFusedLocationProviderClient(applicationContext)
-
-        Intent(this, LocationService::class.java).apply {
-            action = LocationService.ACTION_START
-            startService(this)
-        }
-
-        fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
-            if (location != null) {
-                trackedLocations.add(location)
-            }
-        }
 
         if (ActivityCompat.checkSelfPermission(
                 this@MainActivity,
@@ -76,14 +43,18 @@ class MainActivity : ComponentActivity() {
             return
         }
 
-        setContent {
+     setContent {
             TrackingDemoAppTheme {
                 Column(modifier = Modifier.fillMaxSize()) {
                     LazyColumn(modifier = Modifier.weight(1f)) {
-                        items(trackedLocations) { location ->
+                        items(trackedLocations.reversed()) { location ->
                             val geocoder = Geocoder(this@MainActivity, Locale.getDefault())
                             val addresses: List<Address>?
                             var addressText = ""
+
+                            val currentTime = Calendar.getInstance().time
+                            val timeFormat = SimpleDateFormat("h:mm:ss", Locale.getDefault())
+                            val formattedTime = timeFormat.format(currentTime)
 
                             try {
                                 addresses = geocoder.getFromLocation(
@@ -106,8 +77,30 @@ class MainActivity : ComponentActivity() {
                                 Text(text = "Location Name: $addressText")
                                 Text(text = "Latitude: $latitudeDMS")
                                 Text(text = "Longitude: $longitudeDMS")
+                                Text(text = "Time: $formattedTime")
                             }
                         }
+                    }
+
+                    Button(
+                        modifier = Modifier.align(Alignment.CenterHorizontally).padding(20.dp),
+                        onClick = {
+                            Intent(this@MainActivity, LocationService::class.java).apply {
+                                action = LocationService.ACTION_START
+                                startService(this)
+
+                                val fusedLocationClient =
+                                    LocationServices.getFusedLocationProviderClient(applicationContext)
+
+                                fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
+                                    location?.let {
+                                        trackedLocations.add(location)
+                                    }
+                                }
+                            }
+                        }
+                    ) {
+                        Text("Track Location")
                     }
                 }
             }
