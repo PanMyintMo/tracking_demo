@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">TrackingDemoApp</string>
+    <string name="track_location_button_text">Track Location</string>
+
 </resources>

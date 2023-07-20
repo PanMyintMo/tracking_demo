@@ -8,5 +8,5 @@ interface LocationClient {
 
     fun getLocationUpdate(interval :Long) : Flow<Location>
 
-    class  LocationException : Exception()
+    class  LocationException(message : String) : Exception()
 }

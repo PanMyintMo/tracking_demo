@@ -2,9 +2,11 @@ package com.example.trackingdemoapp
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.location.Location
 import android.location.LocationManager
 import android.os.Looper
+import android.provider.Settings
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -22,7 +24,7 @@ class DefaultLocationClient(
     override fun getLocationUpdate(interval: Long): Flow<Location> {
         return callbackFlow {
             if (!context.hasLocationPermission()) {
-                throw LocationClient.LocationException()
+                throw LocationClient.LocationException("Missing Location Permission")
             }
 
             val locationManager =
@@ -32,7 +34,7 @@ class DefaultLocationClient(
                 locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
 
             if (!isGpsEnable && !isNetworkEnable) {
-                throw LocationClient.LocationException()
+                throw LocationClient.LocationException("GPS is disabled")
             }
 
             val request = LocationRequest.create()
